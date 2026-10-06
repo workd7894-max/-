@@ -22,9 +22,11 @@ def leaf_poly(cx,cy,s,a,flip=1.0):
         ca,sa=math.cos(a),math.sin(a)
         pts.append((cx+x*ca-y*sa,cy+x*sa+y*ca))
     return pts
-NL=26
+NL=22
 lx=rng.random(NL)*W; ly=-rng.random(NL)*H*0.8-60; lvs=rng.random(NL)*90+70; lsz=rng.random(NL)*26+22; lrot=rng.random(NL)*6; lsp=(rng.random(NL)-.5)*3
 font_cache={}
+LEAF=Image.open(S+'/leaf.png').convert('RGBA')
+from PIL import ImageEnhance
 def font(sz):
     if sz not in font_cache: font_cache[sz]=ImageFont.truetype(F,sz)
     return font_cache[sz]
@@ -61,8 +63,13 @@ for n in range(NF):
             cx=cx+(W/2-cx)*cv; cy=cy+(H/2-cy)*cv*0.6
             if cy<-80 or cy>H+80: continue
             sz=lsz[i]*(1-0.7*cv); rot=lrot[i]+lsp[i]*tt_
-            col=(235,int(90+40*(i%3)/2),40,int(230*(1-cv)))
-            dl.polygon(leaf_poly(cx,cy,sz,rot,0.35+0.65*abs(math.cos(tt_*2+i))),fill=col)
+            fl=0.25+0.75*abs(math.cos(tt_*1.6+i))
+            w_=max(4,int(sz*3.0*fl)); h_=max(4,int(sz*3.0))
+            spr=LEAF.resize((w_,h_),Image.BICUBIC).rotate(math.degrees(rot),expand=True,resample=Image.BICUBIC)
+            if i%3==1: spr=ImageEnhance.Brightness(spr).enhance(0.8)
+            if cv>0:
+                al=spr.getchannel('A').point(lambda v:int(v*(1-cv))); spr.putalpha(al)
+            ll.paste(spr,(int(cx-spr.size[0]/2),int(cy-spr.size[1]/2)),spr)
         lb=ll.filter(ImageFilter.GaussianBlur(1.2)); la=np.asarray(lb).astype(float)
         a=la[:,:,3:4]/255; img=img*(1-a)+la[:,:,:3]*a
         lg=np.asarray(ll.filter(ImageFilter.GaussianBlur(14))).astype(float)
